@@ -1,0 +1,2 @@
+# Normalise all text to LF in the repo, whatever core.autocrlf says on this machine.
+* text=auto eol=lf

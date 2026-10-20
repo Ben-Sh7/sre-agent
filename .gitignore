@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
+
+# Real secrets. Unanchored, so it applies in every directory.
+.env
+.env.*
+!.env.example
+
+# Raw recordings from a live cluster hold real log data. Only fixtures that
+# have been redacted and reviewed, under tests/fixtures/, are committed.
+recordings/
+*.log
