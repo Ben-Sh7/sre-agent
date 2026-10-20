@@ -4,4 +4,4 @@ An AI agent that investigates Prometheus alerts with read-only tools, posts a di
 
 **Status:** design. Start with [docs/design.md](docs/design.md).
 
-It runs on the platform in [aws-eks-cicd-pipeline](https://github.com/Ben-Sh7/aws-eks-cicd-pipeline), which holds everything that connects it to the cluster.
+It runs in the EKS cluster of [aws-eks-cicd-pipeline](https://github.com/Ben-Sh7/aws-eks-cicd-pipeline). That repository's `terraform apply` creates everything the agent needs in AWS and in the cluster; this one holds the agent itself - its code, tests, image and Helm chart.
