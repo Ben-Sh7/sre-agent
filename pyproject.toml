@@ -6,6 +6,28 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = []
 
+[dependency-groups]
+dev = [
+    "ruff>=0.17.0",
+]
+
 [build-system]
 requires = ["uv_build>=0.13.1,<0.14.0"]
 build-backend = "uv_build"
+
+[tool.uv]
+# Skip releases younger than a week: a hijacked release is usually found and
+# pulled within days. An urgent security fix can be let through per package.
+exclude-newer = "7 days"
+
+[tool.ruff.lint]
+select = [
+    "E", "W",  # style errors and warnings
+    "F",       # mistakes: unused imports, undefined names
+    "I",       # import order
+    "B",       # likely bugs
+    "UP",      # modern syntax for the target Python
+    "SIM",     # simpler equivalents
+    "S",       # security: hardcoded passwords, shell calls, unsafe parsing
+    "RUF",     # ruff's own checks
+]

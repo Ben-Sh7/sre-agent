@@ -422,6 +422,7 @@ Every check runs in more than one place. The laptop gives fast feedback but can 
 | The cluster | trivy-operator re-scans the running images, as it does for the platform |
 
 - **Locked with hashes.** `uv.lock` pins every package to one version and one hash, so a package swapped on PyPI fails to install
+- **New releases wait a week.** uv installs no version uploaded in the last 7 days (`exclude-newer`): a hijacked release is usually found and pulled within days. An urgent security fix can be let through for one package, and Dependabot's cooldown will match the same 7 days
 - **Generic secrets are caught locally.** GitHub's detection of generic secrets - private keys, passwords inside connection strings - is not available on this plan, so gitleaks covers them before a commit exists
 - **`uv audit` is experimental** in uv 0.13. Trivy's scan of `uv.lock` in CI backs it up
 
