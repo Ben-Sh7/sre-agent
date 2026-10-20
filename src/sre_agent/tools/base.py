@@ -97,7 +97,7 @@ class Toolbox:
         try:
             parsed = tool.arguments.model_validate(arguments)
         except ValidationError as error:
-            return _error(f"invalid arguments for {name}: {_describe(error)}")
+            return _error(f"invalid arguments for {name}: {describe_errors(error)}")
         try:
             text = tool.run(parsed, self._context)
         except (ToolError, SourceError) as error:
@@ -134,7 +134,8 @@ def _error(message: str) -> ToolResult:
     return ToolResult(cap(redact(message)), is_error=True)
 
 
-def _describe(error: ValidationError) -> str:
+def describe_errors(error: ValidationError) -> str:
+    """Where each problem is and what it is. The rejected values are not repeated."""
     return "; ".join(
         f"{'.'.join(str(part) for part in item['loc']) or 'arguments'}: {item['msg']}"
         for item in error.errors(include_url=False, include_input=False)

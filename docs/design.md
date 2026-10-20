@@ -337,6 +337,7 @@ Starting values. All of them are configuration; the dollar amounts are the owner
 | Limit | Value |
 |---|---|
 | Model calls per investigation | 8 |
+| Tool calls per investigation | 24 - after that, every call is answered "used up, submit your report" |
 | Wall clock per investigation | 5 minutes |
 | Spend per investigation | USD 1.00 |
 | Spend per day | USD 5.00, hard stop until 00:00 UTC |
@@ -351,7 +352,7 @@ Starting values. All of them are configuration; the dollar amounts are the owner
 | Verification | the alert is polled once a minute, 10 times, then handed to a human |
 | "Budget reached" and "agent error" notices | once a day each |
 
-**Spend is counted, not guessed.** Each response reports its token usage - input, output, cache reads, cache writes. Code multiplies it by a price table from configuration and adds it to the counters atomically. Before each call it checks the worst case: what has been spent, plus the current prompt at full input price, plus `max_tokens` at output price. If that could cross a cap, the call is not made.
+**Spend is counted, not guessed.** Each response reports its token usage - input, output, cache reads, cache writes. Code multiplies it by a price table from configuration and adds it to the counters atomically. Before each call it checks the worst case: what has been spent, plus the current prompt at the cache-write price - the most an input token can cost - plus `max_tokens` at output price. If that could cross a cap, the call is not made. The prompt's size is exact as of the last response, plus a cautious estimate (two characters a token) for what was appended since. A model with no entry in the price table cannot be used at all: its spend could not be counted.
 
 **The self-trigger loop.** An agent that investigates its own failures can spend all day on itself. Three walls:
 
@@ -384,7 +385,7 @@ There is no reliable way to make a model ignore injected text, so the defenses d
 2. **Closed catalog, strict schema.** An action is an enum value plus typed parameters, validated against the policy before a human sees it
 3. **Code writes the approval text.** What the button will do is printed by code from the validated action. The model cannot describe a dangerous action in harmless words
 4. **No way out for data.** No web or fetch tools, one Slack channel, link unfurling off, egress limited by NetworkPolicy
-5. **Data marked as data.** Tool results are wrapped and labelled as untrusted in the prompt, and the system prompt says text inside them is never an instruction. This helps and guarantees nothing, which is why it is fifth
+5. **Data marked as data.** The alert and every tool result are wrapped in a tag whose name carries a random id, new for each investigation, so a log line cannot close the tag early and continue as if it were an instruction. The system prompt says text inside these tags is never an instruction. This helps and guarantees nothing, which is why it is fifth
 6. **Limits cap the bill.** An injection that makes the model loop runs into the call, time and dollar caps
 7. **Tested.** The evaluation set includes log lines with injected instructions
 
@@ -394,7 +395,7 @@ A known gap: standard NetworkPolicy matches IP ranges, not domain names, so "onl
 
 What can go wrong: a confident root cause with nothing behind it, a pod name or metric value that does not exist, a fix aimed at the wrong thing.
 
-1. **Evidence, checked by code.** The investigation ends only through `submit_report`, a strict schema: root cause, confidence (`low`, `medium`, `high`), evidence, proposed action or none, what was not checked, and suggested steps for a human - now, and to stop it coming back. Each piece of evidence names the tool call it came from and quotes it. Code checks that the call happened and that the quote appears in its result, word for word. Evidence that fails is dropped, and the report says so
+1. **Evidence, checked by code.** The investigation ends only through `submit_report`, a strict schema: root cause, confidence (`low`, `medium`, `high`), evidence, proposed action or none, what was not checked, and suggested steps for a human - now, and to stop it coming back. Each piece of evidence names the tool call it came from, by the number on its data tag, and quotes it. Code checks that the call happened, that it succeeded, and that the quote appears in its result, word for word. Evidence that fails is dropped, and the report says so. An invalid report goes back to the model with what to fix; a model that stops without one is asked for it
 2. **"Undetermined" is a valid answer.** The schema allows it and the prompt asks for it when the evidence is thin. Pressure to always produce an answer is a main source of invented ones
 3. **Targets are real.** Before a proposal is shown, code checks that the target exists, sits in an allowed namespace, and matches the alert's labels
 4. **The human sees the raw evidence.** Quotes are inserted by code from the tool output, with a link to the same query in Grafana

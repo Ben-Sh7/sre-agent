@@ -5,6 +5,7 @@ description = "Investigates Prometheus alerts with read-only tools and proposes 
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "anthropic>=1.13.0",
     "pydantic>=2.14.1",
     "pyyaml>=6.0.3",
 ]
