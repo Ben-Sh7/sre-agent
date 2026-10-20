@@ -409,6 +409,22 @@ What can go wrong: a confident root cause with nothing behind it, a pod name or 
 - **Containers:** non-root, read-only root filesystem, all capabilities dropped, `RuntimeDefault` seccomp, base image pinned by digest, Trivy scan in CI, dependencies locked with hashes
 - **Self-protection:** the agent cannot act in its own namespace, `argocd`, `monitoring`, `kube-system` or `jenkins`, and cannot write to the repositories that hold its code or its policy
 
+### Supply chain and scanning
+
+Every check runs in more than one place. The laptop gives fast feedback but can be skipped; CI cannot, so CI is the gate.
+
+| Where | What runs |
+|---|---|
+| Before a dependency is added | A person's decision: official or well-maintained libraries only, and only what is needed. Every library not added is one less hole |
+| Laptop, before each commit | gitleaks for secrets; ruff on our code, including its security rules; `uv audit` on the locked dependencies - known vulnerabilities, and packages that are deprecated or quarantined on PyPI |
+| Jenkins, every build | The same checks again, the tests, then Trivy on the image - which also reads `uv.lock` - before it is pushed to ECR |
+| GitHub, continuously | Secret scanning with push protection, on since the first push. Dependabot alerts on `uv.lock` |
+| The cluster | trivy-operator re-scans the running images, as it does for the platform |
+
+- **Locked with hashes.** `uv.lock` pins every package to one version and one hash, so a package swapped on PyPI fails to install
+- **Generic secrets are caught locally.** GitHub's detection of generic secrets - private keys, passwords inside connection strings - is not available on this plan, so gitleaks covers them before a commit exists
+- **`uv audit` is experimental** in uv 0.13. Trivy's scan of `uv.lock` in CI backs it up
+
 ---
 
 ## Observing the agent
@@ -541,6 +557,17 @@ Phase 1 replaces these with measured numbers. Most of phase 1 runs against the f
 | 4 | The known-incident set run live, each incident caused on demand; tune from the results | cluster time |
 | 5 | Desired-state fixes as pull requests: files found by retrieval over the platform repository, tested by CI, never merged without a human. Memory of past incidents | cluster time |
 
+Phase 1 goes one step at a time, in this order:
+
+1. The project skeleton: Python 3.13, managed with uv
+2. The local checks from [Supply chain and scanning](#supply-chain-and-scanning), and the first tests
+3. The policy file, its schema, and the check at startup
+4. The read-only tools, against recorded fixtures
+5. Redaction of every tool result
+6. The loop with its limits, against the fake model client
+7. `submit_report` and the evidence check
+8. A few real model runs, on a budget agreed first
+
 ---
 
 ## Alternatives considered
@@ -562,6 +589,7 @@ Phase 1 replaces these with measured numbers. Most of phase 1 runs against the f
 
 1. Model provider - one of the three above
 2. The dollar caps per investigation and per day
-3. Language and stack. Proposed: Python, which has the official SDKs for the model API, Kubernetes, AWS and Slack. Decided at the start of phase 1
-4. Slack app: create it in the existing workspace, choose the channel and the approvers
-5. Confirm in phase 3 that a rollout restart does not show as drift in ArgoCD
+3. Slack app: create it in the existing workspace, choose the channel and the approvers
+4. Confirm in phase 3 that a rollout restart does not show as drift in ArgoCD
+
+Decided: the language is Python 3.13, managed with uv. It has official SDKs for the model API, Kubernetes, AWS and Slack.
