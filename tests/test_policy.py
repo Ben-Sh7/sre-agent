@@ -2,12 +2,22 @@
 
 import copy
 from datetime import timedelta
+from pathlib import Path
 from typing import Any
 
 import pytest
 from pydantic import ValidationError
 
-from sre_agent.policy import PROTECTED_NAMESPACES, Policy
+from sre_agent.policy import (
+    MAX_POLICY_BYTES,
+    PROTECTED_NAMESPACES,
+    Policy,
+    PolicyError,
+    load_policy,
+)
+
+EXAMPLE = Path(__file__).parents[1] / "examples" / "policy.yaml"
+AGENT_NAMESPACE = "sre-agent"
 
 VALID: dict[str, Any] = {
     "version": 1,
@@ -149,3 +159,56 @@ def test_never_acts_in_a_protected_namespace(namespace: str) -> None:
 def test_rejected(path: str, value: Any, reason: str) -> None:
     with pytest.raises(ValidationError, match=reason):
         Policy.model_validate(_with(path, value))
+
+
+# Loading the file
+
+
+def _file(tmp_path: Path, text: str) -> Path:
+    path = tmp_path / "policy.yaml"
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def test_the_example_policy_loads() -> None:
+    policy = load_policy(EXAMPLE, own_namespace=AGENT_NAMESPACE)
+
+    assert policy.scope.act_in_namespaces == {"task-manager"}
+    assert "HPA" in policy.guidance
+
+
+def test_never_acts_in_its_own_namespace() -> None:
+    with pytest.raises(PolicyError, match="its own namespace, task-manager"):
+        load_policy(EXAMPLE, own_namespace="task-manager")
+
+
+def test_a_broken_rule_names_where_it_is(tmp_path: Path) -> None:
+    text = EXAMPLE.read_text(encoding="utf-8").replace(
+        "max_actions_per_day: 5", "max_actions_per_day: 11"
+    )
+
+    with pytest.raises(PolicyError, match=r"limits\.max_actions_per_day: Input should"):
+        load_policy(_file(tmp_path, text), own_namespace=AGENT_NAMESPACE)
+
+
+@pytest.mark.parametrize(
+    ("text", "reason"),
+    [
+        pytest.param("", "the whole file", id="empty file"),
+        pytest.param("scope: [unclosed", "not valid YAML", id="not YAML"),
+        pytest.param(
+            "!!python/object/apply:os.system ['echo hacked']",
+            "not valid YAML",
+            id="tag that would run a command",
+        ),
+        pytest.param("x" * (MAX_POLICY_BYTES + 1), "is over", id="too big"),
+    ],
+)
+def test_bad_file_is_rejected(tmp_path: Path, text: str, reason: str) -> None:
+    with pytest.raises(PolicyError, match=reason):
+        load_policy(_file(tmp_path, text), own_namespace=AGENT_NAMESPACE)
+
+
+def test_missing_file_is_rejected(tmp_path: Path) -> None:
+    with pytest.raises(PolicyError, match="cannot read"):
+        load_policy(tmp_path / "nowhere.yaml", own_namespace=AGENT_NAMESPACE)

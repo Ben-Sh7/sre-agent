@@ -1,0 +1,28 @@
+# An example policy, for the task-manager platform. The real one lives in the
+# platform repository, next to the cluster it describes, and changes only
+# through a reviewed pull request. The rules: src/sre_agent/policy.py
+version: 1
+
+# Hard rules - enforced by code. The model reads them too.
+scope:
+  investigate_namespaces: [task-manager, jenkins, argocd, monitoring]
+  act_in_namespaces: [task-manager]
+
+actions:
+  restart_workload:
+    kinds: [Deployment]
+  delete_pod: {}
+
+limits:
+  max_actions_per_incident: 1
+  max_actions_per_day: 5
+  approval_expires_after: 15m
+
+# Guidance - for the model only. Context, not enforcement.
+guidance: |
+  - jenkins-0 keeps JENKINS_HOME on an EBS volume in one zone. Pending with a
+    volume node affinity conflict means its zone is gone: the fix is the manual
+    runbook in HLD.md, "If a zone goes down". Hand it to a human.
+  - The HPA owns the backend and frontend replica counts. Never suggest a number.
+  - A database outage shows first as backend readiness failures. Say so, and
+    say that the RDS alarms were not checked.

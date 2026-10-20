@@ -6,8 +6,10 @@ the ceilings below is rejected, and the agent does not start.
 
 import re
 from datetime import timedelta
+from pathlib import Path
 from typing import Annotated, Literal, Self
 
+import yaml
 from pydantic import (
     BaseModel,
     BeforeValidator,
@@ -15,9 +17,13 @@ from pydantic import (
     Field,
     Strict,
     StringConstraints,
+    ValidationError,
     field_validator,
     model_validator,
 )
+
+# A policy is a short, hand-written file. Anything bigger is a mistake or an attack.
+MAX_POLICY_BYTES = 64 * 1024
 
 # The platform's own machinery: never acted in, whatever a policy says.
 PROTECTED_NAMESPACES = frozenset({"argocd", "jenkins", "kube-system", "monitoring"})
@@ -114,3 +120,42 @@ class Policy(_Model):
     guidance: Annotated[
         str, Strict(), StringConstraints(max_length=MAX_GUIDANCE_CHARS)
     ] = ""
+
+
+class PolicyError(Exception):
+    """The policy cannot be used, so the agent must not start."""
+
+
+def load_policy(path: Path, *, own_namespace: str) -> Policy:
+    """Read, parse and check a policy file. Every problem raises PolicyError."""
+    try:
+        with path.open("rb") as file:
+            raw = file.read(MAX_POLICY_BYTES + 1)
+    except OSError as error:
+        raise PolicyError(f"cannot read the policy {path}: {error.strerror}") from error
+    if len(raw) > MAX_POLICY_BYTES:
+        raise PolicyError(f"the policy {path} is over {MAX_POLICY_BYTES} bytes")
+
+    try:
+        # Plain data only: safe_load refuses the tags that build objects or run code.
+        data = yaml.safe_load(raw)
+    except yaml.YAMLError as error:
+        raise PolicyError(f"the policy {path} is not valid YAML: {error}") from error
+
+    try:
+        policy = Policy.model_validate(data)
+    except ValidationError as error:
+        raise PolicyError(_describe(path, error)) from error
+
+    if own_namespace in policy.scope.act_in_namespaces:
+        raise PolicyError(f"the agent never acts in its own namespace, {own_namespace}")
+    return policy
+
+
+def _describe(path: Path, error: ValidationError) -> str:
+    """One line per broken rule, naming where it is. Values are not echoed."""
+    lines = [f"the policy {path} breaks {error.error_count()} rule(s):"]
+    for item in error.errors(include_url=False, include_input=False):
+        where = ".".join(str(part) for part in item["loc"]) or "(the whole file)"
+        lines.append(f"  {where}: {item['msg']}")
+    return "\n".join(lines)
