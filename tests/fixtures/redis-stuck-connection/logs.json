@@ -1,0 +1,32 @@
+[
+  {
+    "time": "2026-10-20T02:50:00Z",
+    "labels": {"namespace": "task-manager", "pod": "backend-deploy-7d9f8c6b5-x7k2p", "container": "backend"},
+    "line": "Redis command timed out (early warning)"
+  },
+  {
+    "time": "2026-10-20T03:09:01Z",
+    "labels": {"namespace": "task-manager", "pod": "backend-deploy-7d9f8c6b5-x7k2p", "container": "backend"},
+    "line": "Redis command timed out"
+  },
+  {
+    "time": "2026-10-20T03:12:30Z",
+    "labels": {"namespace": "task-manager", "pod": "backend-deploy-7d9f8c6b5-x7k2p", "container": "backend"},
+    "line": "GET /api/tasks 500 5003ms"
+  },
+  {
+    "time": "2026-10-20T03:18:44Z",
+    "labels": {"namespace": "task-manager", "pod": "backend-deploy-7d9f8c6b5-x7k2p", "container": "backend"},
+    "line": "Redis command timed out"
+  },
+  {
+    "time": "2026-10-20T03:18:50Z",
+    "labels": {"namespace": "task-manager", "pod": "backend-deploy-7d9f8c6b5-a1b2c", "container": "backend"},
+    "line": "GET /api/tasks 200 11ms"
+  },
+  {
+    "time": "2026-10-20T03:19:02Z",
+    "labels": {"namespace": "task-manager", "pod": "backend-deploy-7d9f8c6b5-a1b2c", "container": "backend"},
+    "line": "login ok for user dana@example.com"
+  }
+]

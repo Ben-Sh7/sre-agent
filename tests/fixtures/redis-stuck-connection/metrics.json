@@ -1,0 +1,29 @@
+[
+  {
+    "query": "sum by (pod) (rate(http_request_duration_seconds_count{namespace=\"task-manager\", status=~\"5..\"}[5m]))",
+    "instant": [
+      {"labels": {"pod": "backend-deploy-7d9f8c6b5-x7k2p"}, "value": 0.31},
+      {"labels": {"pod": "backend-deploy-7d9f8c6b5-a1b2c"}, "value": 0},
+      {"labels": {"pod": "backend-deploy-7d9f8c6b5-d3e4f"}, "value": 0}
+    ],
+    "range": [
+      {
+        "labels": {"pod": "backend-deploy-7d9f8c6b5-x7k2p"},
+        "points": [
+          ["2026-10-20T03:00:00Z", 0],
+          ["2026-10-20T03:05:00Z", 0],
+          ["2026-10-20T03:10:00Z", 0.12],
+          ["2026-10-20T03:15:00Z", 0.29],
+          ["2026-10-20T03:20:00Z", 0.31]
+        ]
+      },
+      {
+        "labels": {"pod": "backend-deploy-7d9f8c6b5-a1b2c"},
+        "points": [
+          ["2026-10-20T03:00:00Z", 0],
+          ["2026-10-20T03:20:00Z", 0]
+        ]
+      }
+    ]
+  }
+]

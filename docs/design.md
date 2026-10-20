@@ -124,17 +124,21 @@ Typed functions with validated arguments. The model chooses which to call and wi
 
 | Tool | Returns | Limits |
 |---|---|---|
-| `query_metrics` | PromQL instant or range query | range up to 6 h, step at least 30 s, up to 200 series |
-| `query_logs` | LogQL query against Loki | range up to 1 h, up to 200 lines |
-| `get_resource` | one Kubernetes object, without `managedFields` | kinds from an allowlist - never Secrets or ConfigMaps |
+| `query_metrics` | PromQL instant or range query; a range returns min, max, last and a few points per series | range up to 6 h, step at least 30 s, up to 200 series |
+| `query_logs` | Loki log lines for one namespace, narrowed by pod, container and text. The model fills in fields; the adapter writes the LogQL, so the namespace is always in scope | up to 1 h, up to 200 lines |
+| `get_resource` | one Kubernetes object as YAML, without `managedFields` or the last-applied annotation, and with the literal value of every container env variable hidden | kinds from an allowlist - never Secrets or ConfigMaps |
 | `list_resources` | name and status of one kind in one namespace | up to 100 items |
-| `get_events` | events for one object | up to 50, newest first |
+| `get_events` | events for one namespaced object | up to 50, newest first |
 | `get_pod_logs` | one container's logs, current or previous | last 200 lines, up to 1 h |
 | `get_argocd_app` | sync and health status of an ArgoCD Application | read as a Kubernetes object, so no ArgoCD token |
 | `get_recent_changes` | what changed recently: the revisions ArgoCD deployed and when, and each Deployment's recent rollouts with their images | last 24 h, up to 20 entries; read as Kubernetes objects, so no GitHub token |
 | `submit_report` | ends the investigation | see [Hallucinations](#hallucinations) |
 
 Every call has a 10-second timeout. Every result is redacted, then capped at 8,000 characters. A capped result says so and asks for a narrower query - it never hides the cut.
+
+Namespaced reads happen only in the policy's `investigate_namespaces`. Metrics are the exception: PromQL is free text and may span namespaces, but metrics hold numbers rather than text outsiders wrote, and range, step and series count bound the cost.
+
+The tools read through three interfaces - metrics, logs and Kubernetes - and never know what is behind them. In phase 1 that is a recorded incident replayed from `tests/fixtures/`; in phase 2, live adapters for Prometheus, Loki and the Kubernetes API.
 
 **What changed is the first question.** Many incidents start right after a change, so the prompt asks the model to call `get_recent_changes` early and to name a change when the timing matches. A matching time is a lead, not proof: the report still needs evidence from the other tools. Commit messages and diffs are not read before phase 5; from then on they are untrusted text, like logs.
 

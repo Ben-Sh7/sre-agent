@@ -1,0 +1,150 @@
+{
+  "objects": [
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "backend-deploy-7d9f8c6b5-x7k2p",
+        "namespace": "task-manager",
+        "labels": {"app": "backend"},
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"env\":[{\"name\":\"LOG_LEVEL\",\"value\":\"from-last-applied\"}]}"
+        },
+        "managedFields": [{"manager": "kube-controller-manager", "operation": "Update"}],
+        "ownerReferences": [{"kind": "ReplicaSet", "name": "backend-deploy-7d9f8c6b5"}]
+      },
+      "spec": {
+        "nodeName": "ip-10-0-1-10",
+        "containers": [
+          {
+            "name": "backend",
+            "image": "123456789.dkr.ecr.us-east-1.amazonaws.com/backend:abc1234",
+            "env": [
+              {"name": "LOG_LEVEL", "value": "verbose-debugging"},
+              {"name": "DB_PASSWORD", "valueFrom": {"secretKeyRef": {"name": "app-secret", "key": "DB_PASSWORD"}}}
+            ]
+          }
+        ]
+      },
+      "status": {
+        "phase": "Running",
+        "containerStatuses": [{"name": "backend", "ready": true, "restartCount": 0}]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {"name": "backend-deploy-7d9f8c6b5-a1b2c", "namespace": "task-manager"},
+      "spec": {"nodeName": "ip-10-0-2-20", "containers": [{"name": "backend"}]},
+      "status": {
+        "phase": "Running",
+        "containerStatuses": [{"name": "backend", "ready": true, "restartCount": 0}]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {"name": "redis-7c8d9e6f5-r5s6t", "namespace": "task-manager"},
+      "spec": {"nodeName": "ip-10-0-2-20", "containers": [{"name": "redis"}]},
+      "status": {
+        "phase": "Running",
+        "containerStatuses": [{"name": "redis", "ready": true, "restartCount": 0}]
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {"name": "backend-deploy", "namespace": "task-manager"},
+      "spec": {"replicas": 3},
+      "status": {"readyReplicas": 3}
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "ReplicaSet",
+      "metadata": {
+        "name": "backend-deploy-7d9f8c6b5",
+        "namespace": "task-manager",
+        "creationTimestamp": "2026-10-18T10:00:00Z",
+        "annotations": {"deployment.kubernetes.io/revision": "7"},
+        "ownerReferences": [{"kind": "Deployment", "name": "backend-deploy"}]
+      },
+      "spec": {
+        "replicas": 3,
+        "template": {"spec": {"containers": [{"name": "backend", "image": "ecr/backend:abc1234"}]}}
+      },
+      "status": {"readyReplicas": 3}
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "ReplicaSet",
+      "metadata": {
+        "name": "frontend-deploy-5f6a7b8c9",
+        "namespace": "task-manager",
+        "creationTimestamp": "2026-10-19T22:00:00Z",
+        "annotations": {"deployment.kubernetes.io/revision": "12"},
+        "ownerReferences": [{"kind": "Deployment", "name": "frontend-deploy"}]
+      },
+      "spec": {
+        "replicas": 2,
+        "template": {"spec": {"containers": [{"name": "frontend", "image": "ecr/frontend:def4567"}]}}
+      },
+      "status": {"readyReplicas": 2}
+    },
+    {
+      "apiVersion": "argoproj.io/v1alpha1",
+      "kind": "Application",
+      "metadata": {"name": "task-manager", "namespace": "argocd"},
+      "spec": {"destination": {"namespace": "task-manager"}},
+      "status": {
+        "sync": {"status": "Synced", "revision": "def4567890abcdef1234"},
+        "health": {"status": "Healthy"},
+        "operationState": {"phase": "Succeeded", "message": "successfully synced (all tasks run)"},
+        "history": [
+          {"id": 41, "revision": "abc1234567890abcdef0", "deployedAt": "2026-10-18T09:58:00Z"},
+          {"id": 42, "revision": "def4567890abcdef1234", "deployedAt": "2026-10-19T21:58:00Z"}
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Node",
+      "metadata": {"name": "ip-10-0-1-10", "labels": {"topology.kubernetes.io/zone": "us-east-1a"}},
+      "status": {
+        "conditions": [{"type": "Ready", "status": "True"}],
+        "images": [{"names": ["ecr/backend:abc1234"], "sizeBytes": 123456789}]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Node",
+      "metadata": {"name": "ip-10-0-2-20", "labels": {"topology.kubernetes.io/zone": "us-east-1b"}},
+      "status": {"conditions": [{"type": "Ready", "status": "True"}]}
+    }
+  ],
+  "events": [
+    {
+      "metadata": {"namespace": "task-manager", "creationTimestamp": "2026-10-18T10:00:05Z"},
+      "involvedObject": {"kind": "Pod", "name": "backend-deploy-7d9f8c6b5-x7k2p"},
+      "type": "Normal",
+      "reason": "Scheduled",
+      "message": "Successfully assigned task-manager/backend-deploy-7d9f8c6b5-x7k2p to ip-10-0-1-10",
+      "lastTimestamp": "2026-10-18T10:00:05Z"
+    },
+    {
+      "metadata": {"namespace": "task-manager", "creationTimestamp": "2026-10-18T10:00:20Z"},
+      "involvedObject": {"kind": "Pod", "name": "backend-deploy-7d9f8c6b5-x7k2p"},
+      "type": "Normal",
+      "reason": "Started",
+      "message": "Started container backend",
+      "lastTimestamp": "2026-10-18T10:00:20Z"
+    }
+  ],
+  "pod_logs": [
+    {
+      "namespace": "task-manager",
+      "pod": "backend-deploy-7d9f8c6b5-x7k2p",
+      "container": "backend",
+      "text": "2026-10-20T03:08:58Z GET /api/tasks 200 12ms\n2026-10-20T03:09:01Z Redis command timed out\n2026-10-20T03:12:30Z GET /api/tasks 500 5003ms\n2026-10-20T03:18:44Z Redis command timed out"
+    }
+  ]
+}
