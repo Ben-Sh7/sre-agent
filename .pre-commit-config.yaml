@@ -37,3 +37,12 @@ repos:
         entry: uv run --frozen ruff format --force-exclude
         language: system
         types_or: [python, pyi]
+
+      # The whole project, not just the changed files: a change in one file
+      # can break the types in another.
+      - id: mypy
+        name: mypy - types
+        entry: uv run --frozen mypy
+        language: system
+        types_or: [python, pyi]
+        pass_filenames: false

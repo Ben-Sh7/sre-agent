@@ -12,6 +12,6 @@ Needs [uv](https://docs.astral.sh/uv/) and [gitleaks](https://github.com/gitleak
 
 ```bash
 uv sync                      # the project and its development tools
-uv run pre-commit install    # secret scan, lock check, audit and ruff before every commit
+uv run pre-commit install    # secret scan, lock check, audit, ruff and mypy before every commit
 uv run pytest                # the tests
 ```

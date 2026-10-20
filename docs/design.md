@@ -416,7 +416,7 @@ Every check runs in more than one place. The laptop gives fast feedback but can 
 | Where | What runs |
 |---|---|
 | Before a dependency is added | A person's decision: official or well-maintained libraries only, and only what is needed. Every library not added is one less hole |
-| Laptop, before each commit (pre-commit) | gitleaks for secrets; `uv lock --check`, so `uv.lock` always matches `pyproject.toml`; `uv audit` on the locked dependencies - known vulnerabilities, and packages that are deprecated or quarantined on PyPI; ruff on our code, including its security rules |
+| Laptop, before each commit (pre-commit) | gitleaks for secrets; `uv lock --check`, so `uv.lock` always matches `pyproject.toml`; `uv audit` on the locked dependencies - known vulnerabilities, and packages that are deprecated or quarantined on PyPI; ruff on our code, including its security rules; mypy in strict mode |
 | Jenkins, every build | The same checks again, the tests, then Trivy on the image - which also reads `uv.lock` - before it is pushed to ECR |
 | GitHub, continuously | Secret scanning with push protection, on since the first push. Dependabot alerts on `uv.lock` |
 | The cluster | trivy-operator re-scans the running images, as it does for the platform |
