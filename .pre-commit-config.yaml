@@ -1,0 +1,39 @@
+# Checks that run before every commit. Set up once per clone:
+#   uv run pre-commit install
+#
+# Every hook is local: ruff and uv run at the versions locked in uv.lock, and
+# gitleaks is the one installed on this machine. Nothing else is downloaded.
+repos:
+  - repo: local
+    hooks:
+      - id: gitleaks
+        name: gitleaks - secrets in the staged changes
+        entry: gitleaks git --pre-commit --staged --redact --verbose
+        language: system
+        pass_filenames: false
+
+      - id: uv-lock-check
+        name: uv.lock matches pyproject.toml
+        entry: uv lock --check
+        language: system
+        files: ^(pyproject\.toml|uv\.lock)$
+        pass_filenames: false
+
+      - id: uv-audit
+        name: uv audit - known vulnerabilities in the locked libraries
+        entry: uv audit --frozen --preview-features audit-command
+        language: system
+        files: ^uv\.lock$
+        pass_filenames: false
+
+      - id: ruff-check
+        name: ruff check
+        entry: uv run --frozen ruff check --force-exclude
+        language: system
+        types_or: [python, pyi]
+
+      - id: ruff-format
+        name: ruff format
+        entry: uv run --frozen ruff format --force-exclude
+        language: system
+        types_or: [python, pyi]
